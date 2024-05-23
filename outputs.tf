@@ -1,110 +1,129 @@
-# EKS Output Values
-
-# EKS Cluster Outputs
-output "cluster_id" {
-  description = "The name/id of the EKS cluster."
-  value       = aws_eks_cluster.eks_cluster.id
+# Output variable for attribute_data_type
+output "attribute_data_type" {
+  value = var.attribute_data_type
 }
 
-output "cluster_arn" {
-  description = "The Amazon Resource Name (ARN) of the cluster."
-  value       = aws_eks_cluster.eks_cluster.arn
+# Output variable for mutable
+output "mutable" {
+  value = var.mutable
 }
 
-output "cluster_certificate_authority_data" {
-  description = "Nested attribute containing certificate-authority-data for your cluster. This is the base64 encoded certificate data required to communicate with your cluster."
-  value       = aws_eks_cluster.eks_cluster.certificate_authority[0].data
+# Output variable for name_cognito
+output "name_cognito" {
+  value = var.name_cognito
 }
 
-output "cluster_endpoint" {
-  description = "The endpoint for your EKS Kubernetes API."
-  value       = aws_eks_cluster.eks_cluster.endpoint
+# Output variable for cognito_required
+output "cognito_required" {
+  value = var.cognito_required
 }
 
-output "cluster_version" {
-  description = "The Kubernetes server version for the EKS cluster."
-  value       = aws_eks_cluster.eks_cluster.version
+# Output variable for cognito-minlength
+output "cognito-minlength" {
+  value = var.cognito-minlength
 }
 
-output "cluster_iam_role_name" {
-  description = "IAM role name of the EKS cluster."
-  value       = aws_iam_role.eks_master_role.name 
+# Output variable for cognito-maxlength
+output "cognito-maxlength" {
+  value = var.cognito-maxlength
 }
 
-output "cluster_iam_role_arn" {
-  description = "IAM role ARN of the EKS cluster."
-  value       = aws_iam_role.eks_master_role.arn
+# Output variable for cognito-priority
+output "cognito-priority" {
+  value = var.cognito-priority
 }
 
-output "cluster_oidc_issuer_url" {
-  description = "The URL on the EKS cluster OIDC Issuer"
-  value       = aws_eks_cluster.eks_cluster.identity[0].oidc[0].issuer
+# Output variable for cognito-priority1
+output "cognito-priority1" {
+  value = var.cognito-priority1
 }
 
-output "cluster_primary_security_group_id" {
-  description = "The cluster primary security group ID created by the EKS cluster on 1.14 or later. Referred to as 'Cluster security group' in the EKS console."
-  value       = aws_eks_cluster.eks_cluster.vpc_config[0].cluster_security_group_id
+# Output variable for cognito-name-email
+output "cognito-name-email" {
+  value = var.cognito-name-email
 }
 
-/*
-# EKS Node Group Outputs - Public
-
-output "node_group_public_id" {
-  description = "Public Node Group ID"
-  value       = aws_eks_node_group.eks_ng_public.id
+# Output variable for cognito-name-phone
+output "cognito-name-phone" {
+  value = var.cognito-name-phone
 }
 
-output "node_group_public_arn" {
-  description = "Public Node Group ARN"
-  value       = aws_eks_node_group.eks_ng_public.arn
+# Output variable for cognito_user_pool_name
+output "cognito_user_pool_name" {
+  value = var.cognito_user_pool_name
 }
 
-output "node_group_public_status" {
-  description = "Public Node Group status"
-  value       = aws_eks_node_group.eks_ng_public.status 
+# Output variable for alias_attributes
+output "alias_attributes" {
+  value = var.alias_attributes
 }
 
-output "node_group_public_version" {
-  description = "Public Node Group Kubernetes Version"
-  value       = aws_eks_node_group.eks_ng_public.version
-}
-*/
-
-# EKS Node Group Outputs - Private
-
-output "node_group_private_id" {
-  description = "Node Group 1 ID"
-  value       = aws_eks_node_group.eks_ng_private.id
+# Output variable for mfa_configuration
+output "mfa_configuration" {
+  value = var.mfa_configuration
 }
 
-output "node_group_private_arn" {
-  description = "Private Node Group ARN"
-  value       = aws_eks_node_group.eks_ng_private.arn
+# Output variable for sms_authentication_message
+output "sms_authentication_message" {
+  value = var.sms_authentication_message
 }
 
-output "node_group_private_status" {
-  description = "Private Node Group status"
-  value       = aws_eks_node_group.eks_ng_private.status 
+# Output variable for auto_verified_attributes
+output "auto_verified_attributes" {
+  value = var.auto_verified_attributes
 }
 
-output "node_group_private_version" {
-  description = "Private Node Group Kubernetes Version"
-  value       = aws_eks_node_group.eks_ng_private.version
+# Output variable for case_sensitive
+output "case_sensitive" {
+  value = var.case_sensitive
 }
 
-#Fargate outputs
-output "eks_fargate_profile_id" {
-  description = "EKS Fargate Profile id"
-  value       = aws_eks_fargate_profile.fargate_profile[0].id
+# Output variable for cognito_user_pool_client
+output "cognito_user_pool_client" {
+  value = var.cognito_user_pool_client
 }
 
-output "eks_fargate_profile_arn" {
-  description = "Amazon Resource Name (ARN) of the EKS Fargate Profile"
-  value       = aws_eks_fargate_profile.fargate_profile[0].arn
+# Output variable for callback_urls
+output "callback_urls" {
+  value = var.callback_urls
 }
 
-output "eks_fargate_profile_status" {
-  description = "Status of the EKS Fargate Profile"
-  value       = aws_eks_fargate_profile.fargate_profile[0].status
+# Output variable for logout_urls
+output "logout_urls" {
+  value = var.logout_urls
 }
 
+# Output variable for allowed_oauth_flows_user_pool_client
+output "allowed_oauth_flows_user_pool_client" {
+  value = var.allowed_oauth_flows_user_pool_client
+}
+
+# Output variable for allowed_oauth_flows
+output "allowed_oauth_flows" {
+  value = var.allowed_oauth_flows
+}
+
+# Output variable for allowed_oauth_scopes
+output "allowed_oauth_scopes" {
+  value = var.allowed_oauth_scopes
+}
+
+# Output variable for supported_identity_providers
+output "supported_identity_providers" {
+  value = var.supported_identity_providers
+}
+
+# Output variable for access_token_validity
+output "access_token_validity" {
+  value = var.access_token_validity
+}
+
+# Output variable for id_token_validity
+output "id_token_validity" {
+  value = var.id_token_validity
+}
+
+# Output variable for cognito_user_pool_domain
+output "cognito_user_pool_domain" {
+  value = var.cognito_user_pool_domain
+}

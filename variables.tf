@@ -1,135 +1,213 @@
-variable "vpc_id" {
-  type = string
-  default = "vpc-0731900d6bd65b956"
-  description = "VPC Id"
-}
-
-# VPC Public Subnets
-variable "vpc_public_subnets" {
-  description = "VPC Public Subnets"
-  type = list(string)
-  default = ["10.0.101.0/24", "10.0.102.0/24"]
-}
-
-# VPC Private Subnets
-variable "vpc_private_subnets" {
-  description = "VPC Private Subnets"
-  type = list(string)
-  default = ["10.0.1.0/24", "10.0.2.0/24"]
-}
-
-# EKS Cluster Input Variables
-variable "cluster_name" {
-  description = "Name of the EKS cluster. Also used as a prefix in names of related resources."
-  type        = string
-  default     = "eksdemo"
-}
-
-variable "cluster_service_ipv4_cidr" {
-  description = "service ipv4 cidr for the kubernetes cluster"
-  type        = string
-  default     = null
-}
-
-variable "cluster_version" {
-  description = "Kubernetes minor version to use for the EKS cluster (for example 1.21)"
-  type = string
-  default     = null
-}
-variable "cluster_endpoint_private_access" {
-  description = "Indicates whether or not the Amazon EKS private API server endpoint is enabled."
-  type        = bool
-  default     = false
-}
-
-variable "cluster_endpoint_public_access" {
-  description = "Indicates whether or not the Amazon EKS public API server endpoint is enabled. When it's set to `false` ensure to have a proper private access with `cluster_endpoint_private_access = true`."
-  type        = bool
-  default     = true
-}
-
-variable "cluster_endpoint_public_access_cidrs" {
-  description = "List of CIDR blocks which can access the Amazon EKS public API server endpoint."
-  type        = list(string)
-  default     = ["0.0.0.0/0"]
-}
-
-# EKS OIDC ROOT CA Thumbprint - valid until 2037 - AWS IAM OIDC Connect Provider
-variable "eks_oidc_root_ca_thumbprint" {
-  type        = string
-  description = "Thumbprint of Root CA for EKS OIDC, Valid until 2037"
-  default     = "9e99a48a9960b14926bb7f3b02e22da2b0ab7280"
-}
-
-# Business Division
-variable "business_division" {
-  description = "Business Division in the large organization this Infrastructure belongs"
-  type = string
-  default = "infra-prov"
-}
-
-# Environment Variable
-variable "environment" {
-  description = "Environment Variable used as a prefix"
-  type = string
-  default = "dev"
-}
-
-variable "vpc_spoke_public_subnet_ids" {
- type        = list(string)
- description = "Public Subnet values"
- default     = ["subnet-032dca3fa06cbe664", "subnet-086f0897ba979f3d8"]
-}
-
-variable "vpc_spoke_private_subnet_ids" {
- type        = list(string)
- description = "Private Subnet values"
- default     = ["subnet-01437bb00ba9cf0f9", "subnet-0135a0da32508730e"]
-}
-
-
+# AWS Region
 variable "region" {
-  type        = string
   description = "AWS Region"
+  type        = string
   default     = "us-east-1"
 }
 
-variable "tags" {
-  type        = map(string)
-  default     = {}
-  description = "A mapping of tags which should be assigned to the resource"
+# Cognito User Pool Configuration
+variable "cognito_user_pool_name" {
+  type    = string
+  default = "coginto-infra-prov"
 }
 
-# Boolean indicator to install lbc add-on
-variable "install_lbc_add_on" {
-  description = "Boolean variable to install Load Balancer Add-on"
-  type = bool
+# List of alias attributes for the Cognito User Pool
+variable "alias_attributes" {
+  type    = list(string)
+  default = ["email"]
+}
+
+# Multi-Factor Authentication (MFA) Configuration
+variable "mfa_configuration" {
+  type    = string
+  default = "OPTIONAL"
+}
+
+# SMS Authentication Message for MFA
+variable "sms_authentication_message" {
+  type    = string
+  default = "Your verification code is {####}"
+}
+
+# Auto-verified attributes for users
+variable "auto_verified_attributes" {
+  type    = list(string)
+  default = ["email"]
+}
+
+# Case sensitivity for user attribute values
+variable "case_sensitive" {
+  type    = bool
   default = false
 }
 
-# VPC CIDR Block
-variable "vpc_cidr_block" {
-  description = "VPC CIDR Block"
-  type = string 
-  default = "10.0.0.0/16"
+# Cognito User Attributes
+variable "name_cognito" {
+  type    = string
+  default = "email,phone_number"
 }
 
-# Boolean indicator to install lbc add-on
-variable "install_efs_add_on" {
-  description = "Boolean variable to install EFS Add-on"
-  type = bool
-  default = false
+# Flag indicating whether the Cognito attributes are required
+variable "cognito_required" {
+  type    = bool
+  default = true
 }
 
-variable "require_fargate_compute" {
-  description = "Boolean variable to add Fargate compute to cluster"
-  type = bool
-  default = false
+# Minimum length for Cognito attributes
+variable "cognito-minlength" {
+  type    = number
+  default = 1
 }
 
-variable "namespace" {
-  description = "Name of the namespace in which fargate pods gets created"
-  type=string
-  default = "fp-dev"
-  
+# Maximum length for Cognito attributes
+variable "cognito-maxlength" {
+  type    = number
+  default = 2048
+}
+
+# Priority for Cognito recovery mechanisms
+variable "cognito-priority" {
+  type    = number
+  default = 1
+}
+
+# Priority for an additional Cognito recovery mechanism
+variable "cognito-priority1" {
+  type    = number
+  default = 2
+}
+
+# Cognito attribute name for verified email
+variable "cognito-name-email" {
+  type    = string
+  default = "verified_email"
+}
+
+# Cognito attribute name for verified phone number
+variable "cognito-name-phone" {
+  type    = string
+  default = "verified_phone_number"
+}
+
+# Cognito User Pool Client Configuration
+
+# Name of the Cognito User Pool Client
+variable "cognito_user_pool_client" {
+  type    = string
+  default = "cognito-client-infra-prov"
+}
+
+# Callback URLs for the Cognito User Pool Client
+variable "callback_urls" {
+  type    = list(string)
+  default = ["http://localhost:4200", "http://localhost:4200/login"]
+}
+
+# Logout URLs for the Cognito User Pool Client
+variable "logout_urls" {
+  type    = list(string)
+  default = ["http://localhost:4200/logout"]
+}
+
+# Flag indicating whether the Cognito User Pool Client allows the OAuth flows
+variable "allowed_oauth_flows_user_pool_client" {
+  type    = bool
+  default = true
+}
+
+# List of allowed OAuth flows for the Cognito User Pool Client
+variable "allowed_oauth_flows" {
+  type    = list(string)
+  default = ["code"]
+}
+
+# Set of allowed OAuth scopes for the Cognito User Pool Client
+variable "allowed_oauth_scopes" {
+  type    = set(string)
+  default = ["email", "openid", "phone_number"]
+}
+
+# List of supported identity providers for the Cognito User Pool Client
+variable "supported_identity_providers" {
+  type    = list(string)
+  default = ["COGNITO"]
+}
+
+# Token validity duration for the Cognito User Pool Client
+variable "access_token_validity" {
+  type    = number
+  default = 240
+}
+
+# ID token validity duration for the Cognito User Pool Client
+variable "id_token_validity" {
+  type    = number
+  default = 240
+}
+
+# Cognito User Pool Domain Configuration
+
+# Domain name for the Cognito User Pool
+variable "cognito_user_pool_domain" {
+  type    = string
+  default = "infra-prov"
+}
+
+# Map of tags for all resources
+variable "all_resource_tags" {
+  type    = map(string)
+  default = {
+    environment = "dev"
+    project     = "dac_project"
+  }
+}
+
+# Additional Cognito User Attribute Configuration
+
+# Data type for additional Cognito user attributes
+variable "attribute_data_type" {
+  type    = string
+  default = "String"
+}
+
+# Mutable flag for additional Cognito user attributes
+variable "mutable" {
+  type    = bool
+  default = true
+}
+
+# Name of additional Cognito user attributes for phone numbers
+variable "name_cognito_phone" {
+  type    = string
+  default = "phone_number"
+}
+
+# Data type for additional Cognito user attributes for phone numbers
+variable "phone_number_attribute_data_type" {
+  type    = string
+  default = "String"
+}
+
+# Mutable flag for additional Cognito user attributes for phone numbers
+variable "phone_number_mutable" {
+  type    = bool
+  default = true
+}
+
+# Required flag for additional Cognito user attributes for phone numbers
+variable "phone_number_required" {
+  type    = bool
+  default = true
+}
+
+# Minimum length for additional Cognito user attributes for phone numbers
+variable "phone_number_minlength" {
+  type    = number
+  default = 1
+}
+
+# Maximum length for additional Cognito user attributes for phone numbers
+variable "phone_number_maxlength" {
+  type    = number
+  default = 2048
 }
