@@ -1,181 +1,135 @@
-variable "parametername" {
-  description = "Name of the parameter"
-  type        = string
-  default     = "default_parameter_name"
+variable "vpc_id" {
+  type = string
+  default = "vpc-0731900d6bd65b956"
+  description = "VPC Id"
 }
 
-variable "parametervalue" {
-  description = "Value of the parameter"
-  type        = string
-  default     = "default_parameter_value"
+# VPC Public Subnets
+variable "vpc_public_subnets" {
+  description = "VPC Public Subnets"
+  type = list(string)
+  default = ["10.0.101.0/24", "10.0.102.0/24"]
 }
+
+# VPC Private Subnets
+variable "vpc_private_subnets" {
+  description = "VPC Private Subnets"
+  type = list(string)
+  default = ["10.0.1.0/24", "10.0.2.0/24"]
+}
+
+# EKS Cluster Input Variables
+variable "cluster_name" {
+  description = "Name of the EKS cluster. Also used as a prefix in names of related resources."
+  type        = string
+  default     = "eksdemo"
+}
+
+variable "cluster_service_ipv4_cidr" {
+  description = "service ipv4 cidr for the kubernetes cluster"
+  type        = string
+  default     = null
+}
+
+variable "cluster_version" {
+  description = "Kubernetes minor version to use for the EKS cluster (for example 1.21)"
+  type = string
+  default     = null
+}
+variable "cluster_endpoint_private_access" {
+  description = "Indicates whether or not the Amazon EKS private API server endpoint is enabled."
+  type        = bool
+  default     = false
+}
+
+variable "cluster_endpoint_public_access" {
+  description = "Indicates whether or not the Amazon EKS public API server endpoint is enabled. When it's set to `false` ensure to have a proper private access with `cluster_endpoint_private_access = true`."
+  type        = bool
+  default     = true
+}
+
+variable "cluster_endpoint_public_access_cidrs" {
+  description = "List of CIDR blocks which can access the Amazon EKS public API server endpoint."
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}
+
+# EKS OIDC ROOT CA Thumbprint - valid until 2037 - AWS IAM OIDC Connect Provider
+variable "eks_oidc_root_ca_thumbprint" {
+  type        = string
+  description = "Thumbprint of Root CA for EKS OIDC, Valid until 2037"
+  default     = "9e99a48a9960b14926bb7f3b02e22da2b0ab7280"
+}
+
+# Business Division
+variable "business_division" {
+  description = "Business Division in the large organization this Infrastructure belongs"
+  type = string
+  default = "infra-prov"
+}
+
+# Environment Variable
+variable "environment" {
+  description = "Environment Variable used as a prefix"
+  type = string
+  default = "dev"
+}
+
+variable "vpc_spoke_public_subnet_ids" {
+ type        = list(string)
+ description = "Public Subnet values"
+ default     = ["subnet-032dca3fa06cbe664", "subnet-086f0897ba979f3d8"]
+}
+
+variable "vpc_spoke_private_subnet_ids" {
+ type        = list(string)
+ description = "Private Subnet values"
+ default     = ["subnet-01437bb00ba9cf0f9", "subnet-0135a0da32508730e"]
+}
+
 
 variable "region" {
-  description = "AWS region where resources will be created"
   type        = string
-  default     = "ap-southeast-1"
-}
-
-variable "env" {
-  description = "Environment name"
-  type        = string
-  default     = "dev"
-}
-
-variable "vpc_id" {
-  description = "ID of the VPC where the RDS instance will be deployed"
-  type        = string
-  default     = "vpc-0f95b0003a8f3b723"
-}
-
-variable "db_instance_identifier" {
-  description = "Identifier for the RDS instance"
-  type        = string
-  default     = "my-rds-instance"
-}
-
-variable "db_engine" {
-  description = "Database engine type (e.g., MariaDB, MySQL, PostgreSQL)"
-  type        = string
-  default     = "postgres"
-}
-
-variable "db_engine_version" {
-  description = "Version of the database engine"
-  type        = string
-  default     = "15.6"
-}
-
-variable "storage" {
-  description = "Allocated storage for the RDS instance (in GB)"
-  type        = string
-  default     = "20"
-}
-
-variable "db_instance_class" {
-  description = "RDS instance class"
-  type        = string
-  default     = "db.t3.micro"
-}
-
-variable "db_username" {
-  description = "Username for the database"
-  type        = string
-  default     = "admin"
-}
-
-variable "db_password" {
-  description = "Password for the database"
-  type        = string
-  default     = "Tiger123"
-}
-
-variable "subnet_ids" {
-  description = "List of subnet IDs for the RDS instance"
-  type        = list(string)
-  default     = ["subnet-0dcc687f316c00a89", "subnet-0319afd980978b59a"]
-}
-
-variable "database_engine_ports" {
-  description = "Mapping of database engine types to their default ports"
-  type        = map(number)
-  default = {
-    "postgresql" = 5432
-  }
-}
-
-variable "database_port" {
-  description = "Port number for database access"
-  type        = number
-  default     = 5432
-}
-
-variable "charset_name" {
-  description = "Character set name used for database encoding"
-  type        = string
-  default     = null
-}
-
-variable "db_parameter_group_family" {
-  description = "DB parameter group family"
-  type        = string
-  default     = "postgres15"
-}
-
-variable "snapshot_identifier" {
-  description = "Identifier of the snapshot to restore from"
-  type        = string
-  default     = null
-}
-
-variable "restore_to_point_in_time" {
-  description = "Object specifying the restore point in time for the DB instance"
-  type = object({
-    restore_time                             = optional(string, null)
-    source_db_instance_identifier            = optional(string, null)
-    source_db_instance_automated_backups_arn = optional(string, null)
-    source_dbi_resource_id                   = optional(string, null)
-    use_latest_restorable_time               = optional(bool, null)
-  })
-  default = null
-}
-
-variable "audit_plugin_server_audit_events" {
-  description = "Events to be audited by the server audit plugin"
-  type        = string
-  default     = "CONNECT,QUERY,TABLE"
-}
-
-variable "storage_type" {
-  description = "Type of storage (e.g., gp2, io1)"
-  type        = string
-  default     = "gp2"
-}
-
-variable "multi_az" {
-  description = "Enable Multi-AZ deployment"
-  type        = bool
-  default     = false
-}
-
-variable "storage_encrypted" {
-  description = "Enable storage encryption"
-  type        = bool
-  default     = true
-}
-
-variable "allow_major_version_upgrade" {
-  description = "Allow major version upgrades for the database engine"
-  type        = bool
-  default     = false
-}
-
-variable "auto_minor_version_upgrade" {
-  description = "Enable automatic minor version upgrades for the database engine"
-  type        = bool
-  default     = false
-}
-
-variable "publicly_accessible" {
-  description = "Make the RDS instance publicly accessible"
-  type        = bool
-  default     = false
-}
-
-variable "skip_final_snapshot" {
-  description = "Skip creating a final snapshot when deleting the database instance"
-  type        = bool
-  default     = true
-}
-
-variable "backup_retention_period" {
-  description = "Number of days to retain automated backups"
-  type        = string
-  default     = "7"
+  description = "AWS Region"
+  default     = "us-east-1"
 }
 
 variable "tags" {
-  description = "Mapping of tags to be assigned to resources"
   type        = map(string)
   default     = {}
+  description = "A mapping of tags which should be assigned to the resource"
+}
+
+# Boolean indicator to install lbc add-on
+variable "install_lbc_add_on" {
+  description = "Boolean variable to install Load Balancer Add-on"
+  type = bool
+  default = false
+}
+
+# VPC CIDR Block
+variable "vpc_cidr_block" {
+  description = "VPC CIDR Block"
+  type = string 
+  default = "10.0.0.0/16"
+}
+
+# Boolean indicator to install lbc add-on
+variable "install_efs_add_on" {
+  description = "Boolean variable to install EFS Add-on"
+  type = bool
+  default = false
+}
+
+variable "require_fargate_compute" {
+  description = "Boolean variable to add Fargate compute to cluster"
+  type = bool
+  default = false
+}
+
+variable "namespace" {
+  description = "Name of the namespace in which fargate pods gets created"
+  type=string
+  default = "fp-dev"
+  
 }
