@@ -1,51 +1,22 @@
-# Output variable for attribute_data_type
-output "attribute_data_type" {
-  value = var.attribute_data_type
+
+# Output variable for cognito_priority
+output "cognito_priority" {
+  value = var.cognito_priority
 }
 
-# Output variable for mutable
-output "mutable" {
-  value = var.mutable
+# Output variable for cognito_priority1
+output "cognito_priority1" {
+  value = var.cognito_priority1
 }
 
-# Output variable for name_cognito
-output "name_cognito" {
-  value = var.name_cognito
+# Output variable for cognito_name_email
+output "cognito_name_email" {
+  value = var.cognito_name_email
 }
 
-# Output variable for cognito_required
-output "cognito_required" {
-  value = var.cognito_required
-}
-
-# Output variable for cognito-minlength
-output "cognito-minlength" {
-  value = var.cognito-minlength
-}
-
-# Output variable for cognito-maxlength
-output "cognito-maxlength" {
-  value = var.cognito-maxlength
-}
-
-# Output variable for cognito-priority
-output "cognito-priority" {
-  value = var.cognito-priority
-}
-
-# Output variable for cognito-priority1
-output "cognito-priority1" {
-  value = var.cognito-priority1
-}
-
-# Output variable for cognito-name-email
-output "cognito-name-email" {
-  value = var.cognito-name-email
-}
-
-# Output variable for cognito-name-phone
-output "cognito-name-phone" {
-  value = var.cognito-name-phone
+# Output variable for cognito_name_phone
+output "cognito_name_phone" {
+  value = var.cognito_name_phone
 }
 
 # Output variable for cognito_user_pool_name

@@ -8,7 +8,7 @@ variable "region" {
 # Cognito User Pool Configuration
 variable "cognito_user_pool_name" {
   type    = string
-  default = "coginto-infra-prov"
+  default = "cognito-infra-prov"
 }
 
 # List of alias attributes for the Cognito User Pool
@@ -41,50 +41,26 @@ variable "case_sensitive" {
   default = false
 }
 
-# Cognito User Attributes
-variable "name_cognito" {
-  type    = string
-  default = "email,phone_number"
-}
-
-# Flag indicating whether the Cognito attributes are required
-variable "cognito_required" {
-  type    = bool
-  default = true
-}
-
-# Minimum length for Cognito attributes
-variable "cognito-minlength" {
-  type    = number
-  default = 1
-}
-
-# Maximum length for Cognito attributes
-variable "cognito-maxlength" {
-  type    = number
-  default = 2048
-}
-
 # Priority for Cognito recovery mechanisms
-variable "cognito-priority" {
+variable "cognito_priority" {
   type    = number
   default = 1
 }
 
 # Priority for an additional Cognito recovery mechanism
-variable "cognito-priority1" {
+variable "cognito_priority1" {
   type    = number
   default = 2
 }
 
 # Cognito attribute name for verified email
-variable "cognito-name-email" {
+variable "cognito_name_email" {
   type    = string
   default = "verified_email"
 }
 
 # Cognito attribute name for verified phone number
-variable "cognito-name-phone" {
+variable "cognito_name_phone" {
   type    = string
   default = "verified_phone_number"
 }
@@ -139,6 +115,11 @@ variable "access_token_validity" {
   default = 240
 }
 
+variable "refresh_token_validity" {
+  type  = number
+  default = 30
+}
+
 # ID token validity duration for the Cognito User Pool Client
 variable "id_token_validity" {
   type    = number
@@ -153,6 +134,7 @@ variable "cognito_user_pool_domain" {
   default = "infra-prov"
 }
 
+
 # Map of tags for all resources
 variable "all_resource_tags" {
   type    = map(string)
@@ -160,54 +142,4 @@ variable "all_resource_tags" {
     environment = "dev"
     project     = "dac_project"
   }
-}
-
-# Additional Cognito User Attribute Configuration
-
-# Data type for additional Cognito user attributes
-variable "attribute_data_type" {
-  type    = string
-  default = "String"
-}
-
-# Mutable flag for additional Cognito user attributes
-variable "mutable" {
-  type    = bool
-  default = true
-}
-
-# Name of additional Cognito user attributes for phone numbers
-variable "name_cognito_phone" {
-  type    = string
-  default = "phone_number"
-}
-
-# Data type for additional Cognito user attributes for phone numbers
-variable "phone_number_attribute_data_type" {
-  type    = string
-  default = "String"
-}
-
-# Mutable flag for additional Cognito user attributes for phone numbers
-variable "phone_number_mutable" {
-  type    = bool
-  default = true
-}
-
-# Required flag for additional Cognito user attributes for phone numbers
-variable "phone_number_required" {
-  type    = bool
-  default = true
-}
-
-# Minimum length for additional Cognito user attributes for phone numbers
-variable "phone_number_minlength" {
-  type    = number
-  default = 1
-}
-
-# Maximum length for additional Cognito user attributes for phone numbers
-variable "phone_number_maxlength" {
-  type    = number
-  default = 2048
 }
