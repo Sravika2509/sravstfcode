@@ -191,3 +191,76 @@ resource "aws_cloudwatch_dashboard" "athena_dashboard" {
   })
   depends_on = [aws_athena_workgroup.athena_workgroup]
 }
+
+resource "aws_athena_table" "example_table1" {
+  name          = "example_table1"
+  database      = aws_athena_database.example.name
+  bucket        = aws_s3_bucket.example.bucket
+  table_type    = "EXTERNAL_TABLE"
+  external_location = "s3://${aws_s3_bucket.example.bucket}/data/table1/"
+
+  schema {
+    columns = [
+      {
+        name = "id"
+        type = "int"
+      },
+      {
+        name = "name"
+        type = "string"
+      },
+      {
+        name = "age"
+        type = "int"
+      }
+    ]
+  }
+
+  partition_keys = [
+    {
+      name = "year"
+      type = "int"
+    },
+    {
+      name = "month"
+      type = "int"
+    }
+  ]
+}
+
+# Create the second Athena table
+resource "aws_athena_table" "example_table2" {
+  name          = "example_table2"
+  database      = aws_athena_database.example.name
+  bucket        = aws_s3_bucket.example.bucket
+  table_type    = "EXTERNAL_TABLE"
+  external_location = "s3://${aws_s3_bucket.example.bucket}/data/table2/"
+
+  schema {
+    columns = [
+      {
+        name = "id"
+        type = "int"
+      },
+      {
+        name = "product"
+        type = "string"
+      },
+      {
+        name = "price"
+        type = "float"
+      }
+    ]
+  }
+
+  partition_keys = [
+    {
+      name = "category"
+      type = "string"
+    },
+    {
+      name = "year"
+      type = "int"
+    }
+  ]
+}
