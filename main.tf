@@ -264,3 +264,125 @@ resource "aws_athena_table" "example_table2" {
     }
   ]
 }
+
+
+
+# Create the first Glue catalog table
+resource "aws_glue_catalog_table" "example_table1" {
+  name          = "example_table1"
+  database_name = aws_glue_catalog_database.example.name
+  table_type    = "EXTERNAL_TABLE"
+  parameters = {
+    "classification" = "parquet"  # Change based on your data format
+    "EXTERNAL"       = "TRUE"
+  }
+  storage_descriptor {
+    location      = "s3://${aws_s3_bucket.example.bucket}/data/table1/"
+    input_format  = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"  # Change based on your data format
+    output_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"  # Change based on your data format
+    ser_de_info {
+      name                  = "example_table1"
+      serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"  # Change based on your data format
+    }
+    columns = [
+      {
+        name = "id"
+        type = "int"
+      },
+      {
+        name = "name"
+        type = "string"
+      },
+      {
+        name = "age"
+        type = "int"
+      }
+    ]
+  }
+  partition_keys = [
+    {
+      name = "year"
+      type = "int"
+    },
+    {
+      name = "month"
+      type = "int"
+    }
+  ]
+}
+
+# Create the second Glue catalog table
+resource "aws_glue_catalog_table" "example_table2" {
+  name          = "example_table2"
+  database_name = aws_glue_catalog_database.example.name
+  table_type    = "EXTERNAL_TABLE"
+  parameters = {
+    "classification" = "parquet"  # Change based on your data format
+    "EXTERNAL"       = "TRUE"
+  }
+  storage_descriptor {
+    location      = "s3://${aws_s3_bucket.example.bucket}/data/table2/"
+    input_format  = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"  # Change based on your data format
+    output_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"  # Change based on your data format
+    ser_de_info {
+      name                  = "example_table2"
+      serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"  # Change based on your data format
+    }
+    columns = [
+      {
+        name = "id"
+        type = "int"
+      },
+      {
+        name = "product"
+        type = "string"
+      },
+      {
+        name = "price"
+        type = "float"
+      }
+    ]
+  }
+  partition_keys = [
+    {
+      name = "category"
+      type = "string"
+    },
+    {
+      name = "year"
+      type = "int"
+    }
+  ]
+}
+
+# Create the first Athena table using a named query
+resource "aws_athena_named_query" "example_table1" {
+  name      = "CreateExampleTable1"
+  database  = aws_athena_database.example.name
+  query     = <<EOF
+CREATE EXTERNAL TABLE IF NOT EXISTS example_table1 (
+  id INT,
+  name STRING,
+  age INT
+)
+PARTITIONED BY (year INT, month INT)
+STORED AS PARQUET
+LOCATION 's3://${aws_s3_bucket.example.bucket}/data/table1/'
+EOF
+}
+
+# Create the second Athena table using a named query
+resource "aws_athena_named_query" "example_table2" {
+  name      = "CreateExampleTable2"
+  database  = aws_athena_database.example.name
+  query     = <<EOF
+CREATE EXTERNAL TABLE IF NOT EXISTS example_table2 (
+  id INT,
+  product STRING,
+  price FLOAT
+)
+PARTITIONED BY (category STRING, year INT)
+STORED AS PARQUET
+LOCATION 's3://${aws_s3_bucket.example.bucket}/data/table2/'
+EOF
+}
