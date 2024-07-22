@@ -1,100 +1,34 @@
-
-# Output variable for cognito_priority
-output "cognito_priority" {
-  value = var.cognito_priority
+output "event_bus_arn" {
+  description = "The ARN of the CloudWatch Event Bus"
+  value       = aws_cloudwatch_event_bus.cloudwatch_event_bus_infra_prov.arn
 }
 
-# Output variable for cognito_priority1
-output "cognito_priority1" {
-  value = var.cognito_priority1
+output "lambda_function_arn" {
+  description = "The ARN of the Lambda function"
+  value       = aws_lambda_function.lambda_function_infra_prov.arn
 }
 
-# Output variable for cognito_name_email
-output "cognito_name_email" {
-  value = var.cognito_name_email
+output "cloudwatch_event_rule_arn" {
+  description = "The ARN of the CloudWatch Event Rule"
+  value       = aws_cloudwatch_event_rule.cloudwatch_event_rule_infra_prov.arn
 }
 
-# Output variable for cognito_name_phone
-output "cognito_name_phone" {
-  value = var.cognito_name_phone
+output "cloudwatch_event_connection_arn" {
+  description = "The ARN of the CloudWatch Event Connection"
+  value       = aws_cloudwatch_event_connection.cloudwatch_event_connection_infra_prov.arn
 }
 
-# Output variable for cognito_user_pool_name
-output "cognito_user_pool_name" {
-  value = var.cognito_user_pool_name
+output "event_bridge_pipe_arn" {
+  description = "The ARN of the EventBridge Pipe"
+  value       = aws_pipes_pipe.pipes_pipe_infra_prov.arn
 }
 
-# Output variable for alias_attributes
-output "alias_attributes" {
-  value = var.alias_attributes
+output "event_bridge_schedule_group_name" {
+  description = "The name of the EventBridge Schedule Group"
+  value       = aws_scheduler_schedule_group.scheduler_schedule_group_infra_prov.name
 }
 
-# Output variable for mfa_configuration
-output "mfa_configuration" {
-  value = var.mfa_configuration
-}
-
-# Output variable for sms_authentication_message
-output "sms_authentication_message" {
-  value = var.sms_authentication_message
-}
-
-# Output variable for auto_verified_attributes
-output "auto_verified_attributes" {
-  value = var.auto_verified_attributes
-}
-
-# Output variable for case_sensitive
-output "case_sensitive" {
-  value = var.case_sensitive
-}
-
-# Output variable for cognito_user_pool_client
-output "cognito_user_pool_client" {
-  value = var.cognito_user_pool_client
-}
-
-# Output variable for callback_urls
-output "callback_urls" {
-  value = var.callback_urls
-}
-
-# Output variable for logout_urls
-output "logout_urls" {
-  value = var.logout_urls
-}
-
-# Output variable for allowed_oauth_flows_user_pool_client
-output "allowed_oauth_flows_user_pool_client" {
-  value = var.allowed_oauth_flows_user_pool_client
-}
-
-# Output variable for allowed_oauth_flows
-output "allowed_oauth_flows" {
-  value = var.allowed_oauth_flows
-}
-
-# Output variable for allowed_oauth_scopes
-output "allowed_oauth_scopes" {
-  value = var.allowed_oauth_scopes
-}
-
-# Output variable for supported_identity_providers
-output "supported_identity_providers" {
-  value = var.supported_identity_providers
-}
-
-# Output variable for access_token_validity
-output "access_token_validity" {
-  value = var.access_token_validity
-}
-
-# Output variable for id_token_validity
-output "id_token_validity" {
-  value = var.id_token_validity
-}
-
-# Output variable for cognito_user_pool_domain
-output "cognito_user_pool_domain" {
-  value = var.cognito_user_pool_domain
+output "event_bridge_schedule_name" {
+  description = "The name of the EventBridge Schedule"
+  value       = aws_scheduler_schedule.scheduler_schedule_infra_prov.name
 }

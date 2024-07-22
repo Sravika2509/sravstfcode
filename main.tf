@@ -1,388 +1,240 @@
-module "s3_module" {
-    source = "../s3"
-    s3_bucket_name = var.athena_s3_bucket_name
-    region = var.region
-    force_destroy = var.force_destroy
-    tags = var.athena_s3_bucket_tags
-    cloudwatch_resources = var.s3_cloudwatch_resources
-  }
+# Create Event Bus
+resource "aws_cloudwatch_event_bus" "cloudwatch_event_bus_infra_prov" {
+  name = var.event_bus_name
+}
 
-data "aws_iam_policy_document" "athena-bucket-policy" {
-  statement {
-    principals {
-      type        = "Service"
-      identifiers = ["athena.amazonaws.com"]
-    }
-    actions = [
-      "s3:*",
-    ]
-    resources = [
-      module.s3_module.s3_bucket_arn,
-      "${module.s3_module.s3_bucket_arn}/*",
-    ]
+# Create Lambda function code archive
+data "archive_file" "lambda_function_code" {
+  type        = "zip"
+  output_path = "${path.module}/lambda_function_payload.zip"
+
+  source {
+    content  = <<-EOF
+      // Your Lambda function code here
+      exports.test = async (event) => {
+        console.log("Lambda function executed!");
+      };
+    EOF
+    filename = "index.js"
   }
 }
-resource "aws_s3_bucket_policy" "athena_bucket_policy" {
-  bucket = module.s3_module.s3_bucket_name
-  policy = data.aws_iam_policy_document.athena-bucket-policy.json
+
+# Create IAM Role for Lambda
+resource "aws_iam_role" "iam_for_lambda_infra_prov" {
+  name = var.iam_role_name
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+      Effect = "Allow"
+    }]
+  })
 }
 
-resource "aws_athena_workgroup" "athena_workgroup" {
-  name = var.workgroup_name
+# Create IAM Policy for Lambda and SQS full access
+resource "aws_iam_policy" "lambda_sqs_full_access_policy" {
+  name        = "LambdaSQSFullAccessPolicy"
+  description = "Policy granting full access to Lambda functions and SQS"
 
-  configuration {
-    bytes_scanned_cutoff_per_query     = var.bytes_scanned_cutoff_per_query
-    enforce_workgroup_configuration    = var.enforce_workgroup_configuration
-    publish_cloudwatch_metrics_enabled = var.publish_cloudwatch_metrics_enabled
-    
-    result_configuration {
-      output_location = format("s3://%s/%s", module.s3_module.s3_bucket_name, var.s3_output_path)
-    }
-  }
-  force_destroy = var.workgroup_force_destroy
-  state         = var.workgroup_state 
-  tags = var.tags
-}
-
-resource "aws_athena_database" "athena_database" {
-  for_each = { for idx, db in var.databases : idx => db }
-
-  name       = each.value.name
-  bucket     = module.s3_module.s3_bucket_name
-  comment    = each.value.comment
-  properties = each.value.properties
-  
-
-  dynamic "acl_configuration" {
-    for_each = each.value.acl_configuration != null ? ["true"] : []
-
-    content {
-      s3_acl_option = each.value.acl_configuration.s3_acl_option
-    }
-  }
-  expected_bucket_owner = each.value.expected_bucket_owner
-  force_destroy         = each.value.force_destroy
-  
-}
-data "aws_caller_identity" "current" {}
-resource "aws_athena_data_catalog" "data_catalog" {
-  for_each = { for idx, catalog in var.data_catalogs : idx => catalog }
-
-  name        = "${each.value.name}"
-  description = each.value.description
-  type        = each.value.type
-
-  parameters =  each.value.type == "GLUE" ? merge(
-    each.value.parameters,
-    each.value.parameters.catalog-id != "" ? { "catalog-id" = "${each.value.parameters.catalog-id}" } : { "catalog-id" = "${data.aws_caller_identity.current.account_id}" }
-  ): each.value.parameters
-  
-
-  tags = var.tags
-}
-
-resource "aws_athena_named_query" "queries" {
-for_each = var.named_queries
-
-  name        = each.value.name
-  workgroup   = aws_athena_workgroup.athena_workgroup.name
-  database    = aws_athena_database.athena_database[each.value.database].name
-  query       = each.value.query
-  description = each.value.description
-}
-
-## Cloudwatch Alarms and Metrics Dashboard 
-resource "aws_sns_topic" "cloudwatch_notifications" {
-  count = var.cloudwatch_resources ? 1 : 0
-  name  = var.sns_topic_name
-}
-
-resource "aws_cloudwatch_metric_alarm" "athena_query_queue_time_alarm" {
-  count = var.cloudwatch_resources ? 1 : 0
-  alarm_name          = "AthenaQueryQueueTimeAlarm"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = 1
-  metric_name         = "QueryQueueTime"
-  namespace           = "AWS/Athena"
-  period              = 300
-  statistic           = "Average"
-  threshold           = var.query_queue_time_threshold_seconds
-  alarm_description   = "Alarm when query queue time exceeds 60 seconds"
-  alarm_actions       = var.cloudwatch_resources ? [aws_sns_topic.cloudwatch_notifications[0].arn] : []
-  dimensions = {
-    WorkGroup = aws_athena_workgroup.athena_workgroup.id
-  }
-  depends_on = [aws_athena_workgroup.athena_workgroup]
-}
-
-resource "aws_cloudwatch_metric_alarm" "athena_query_processing_time_alarm" {
-  count = var.cloudwatch_resources ? 1 : 0
-  alarm_name          = "AthenaQueryProcessingTimeAlarm"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = 1
-  metric_name         = "ServiceProcessingTime"
-  namespace           = "AWS/Athena"
-  period              = 300
-  statistic           = "Average"
-  threshold           = var.query_processing_time_threshold_seconds
-  alarm_description   = "Alarm when query processing time exceeds 60 seconds"
-  alarm_actions       = var.cloudwatch_resources ? [aws_sns_topic.cloudwatch_notifications[0].arn] : []
-  dimensions = {
-    WorkGroup = aws_athena_workgroup.athena_workgroup.id
-  }
-  depends_on = [aws_athena_workgroup.athena_workgroup]
-}
-
-resource "aws_cloudwatch_dashboard" "athena_dashboard" {
-  count          = var.cloudwatch_resources ? 1 : 0
-  dashboard_name = var.dashboard_name
-  dashboard_body = jsonencode({
-    "widgets" : [
-     ## Athena Metrics
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
       {
-        "type" : "metric",
-        "x" : 0,
-        "y" : 0,
-        "width" : 6,
-        "height" : 6,
-        "properties" : {
-          "view" : "timeSeries",
-          "title" : "Athena Query Queue Time",
-          "stacked" : false,
-          "metrics" : [
-            ["AWS/Athena", "QueryQueueTime", "WorkGroup", "${aws_athena_workgroup.athena_workgroup.id}"]
-          ],
-          "region" : "${var.region}"
-        }
+        Effect = "Allow",
+        Action = ["lambda:*"],
+        Resource = "*",
       },
       {
-        "type" : "metric",
-        "x" : 6,
-        "y" : 0,
-        "width" : 6,
-        "height" : 6,
-        "properties" : {
-          "view" : "timeSeries",
-          "title" : "Athena Query Processing Time",
-          "stacked" : false,
-          "metrics" : [
-            ["AWS/Athena", "ServiceProcessingTime", "WorkGroup", "${aws_athena_workgroup.athena_workgroup.id}"]
-          ],
-          "region" : "${var.region}"
-        }
+        Effect = "Allow",
+        Action = ["sqs:*"],
+        Resource = aws_sqs_queue.sqs_queue_infra_prov.arn,
       },
+    ]
+  })
+}
+
+# Attach IAM Policy to IAM Role
+resource "aws_iam_role_policy_attachment" "lambda_sqs_full_access_attachment" {
+  policy_arn = aws_iam_policy.lambda_sqs_full_access_policy.arn
+  role       = aws_iam_role.iam_for_lambda_infra_prov.name
+}
+
+# Create Lambda function
+resource "aws_lambda_function" "lambda_function_infra_prov" {
+  function_name = var.lambda_function_name
+  role          = aws_iam_role.iam_for_lambda_infra_prov.arn
+  handler       = "index.test"
+  filename      = data.archive_file.lambda_function_code.output_path
+  runtime       = "nodejs20.x"
+
+  environment {
+    variables = {
+      foo = "bar"
+    }
+  }
+}
+
+# Create CloudWatch Event Rule
+resource "aws_cloudwatch_event_rule" "cloudwatch_event_rule_infra_prov" {
+  name        = var.event_rule_name
+  description = var.event_rule_description
+
+  event_pattern = var.event_pattern
+}
+
+# Create CloudWatch Event Target for Lambda
+resource "aws_cloudwatch_event_target" "cloudwatch_event_target_infra_prov" {
+  rule      = aws_cloudwatch_event_rule.cloudwatch_event_rule_infra_prov.name
+  target_id = var.event_target_id
+  arn       = aws_lambda_function.lambda_function_infra_prov.arn
+}
+
+# Allow CloudWatch Events to trigger Lambda
+resource "aws_lambda_permission" "lambda_permission_infra_prov" {
+  statement_id  = "AllowExecutionFromCloudWatch"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.lambda_function_infra_prov.function_name
+  principal     = "events.amazonaws.com"
+
+  source_arn = aws_cloudwatch_event_rule.cloudwatch_event_rule_infra_prov.arn
+}
+
+# Create CloudWatch Event Connection with BASIC authorization (empty auth_parameters block)
+resource "aws_cloudwatch_event_connection" "cloudwatch_event_connection_infra_prov" {
+  name               = var.connection_name_none
+  description        = var.connection_description_none
+  authorization_type = var.authorization_type
+
+  auth_parameters {
+    basic {
+      username = var.username  
+      password = var.password 
+    }
+  }
+}
+
+# Create AWS Pipes Pipe with EventBridge Event Bus as the target
+resource "aws_pipes_pipe" "pipes_pipe_infra_prov" {
+  name        = var.pipe_name
+  description = var.pipe_description
+  role_arn    = aws_iam_role.iam_for_pipes_pipe_infra_prov.arn  # Use the IAM role ARN
+  source      = aws_sqs_queue.sqs_queue_infra_prov.arn  # Use the ARN of the SQS Queue as the source
+  target      = aws_cloudwatch_event_bus.cloudwatch_event_bus_infra_prov.arn  # Use the ARN of the Event Bus as the target
+}
+
+# Update AWS Lambda Permission for EventBridge
+resource "aws_lambda_permission" "lambda_permission_eventbridge" {
+  statement_id  = "AllowExecutionFromEventBridge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.lambda_function_infra_prov.function_name
+  principal     = "events.amazonaws.com"
+
+  source_arn = aws_cloudwatch_event_bus.cloudwatch_event_bus_infra_prov.arn
+}
+
+# Create SQS Queue
+resource "aws_sqs_queue" "sqs_queue_infra_prov" {
+  name                      = var.sqs_queue_name
+  delay_seconds             = var.delay_seconds
+  max_message_size          = var.max_message_size
+  message_retention_seconds = var.message_retention_seconds
+}
+
+# Update IAM Role for pipes_pipe
+resource "aws_iam_role" "iam_for_pipes_pipe_infra_prov" {
+  name = "pipes_pipe_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
       {
-        "type" : "metric",
-        "x" : 12,
-        "y" : 0,
-        "width" : 6,
-        "height" : 6,
-        "properties" : {
-          "view" : "timeSeries",
-          "title" : "Athena DPU Allocated",
-          "stacked" : false,
-          "metrics" : [
-            ["AWS/Athena", "DPUAllocated", "WorkGroup", "${aws_athena_workgroup.athena_workgroup.id}"]
-          ],
-          "region" : "${var.region}"
-        }
+        Action = "sts:AssumeRole",
+        Principal = {
+          Service = "pipes.amazonaws.com"  # Update with the correct service name for pipes
+        },
+        Effect = "Allow"
       }
     ]
   })
-  depends_on = [aws_athena_workgroup.athena_workgroup]
 }
 
-resource "aws_athena_table" "example_table1" {
-  name          = "example_table1"
-  database      = aws_athena_database.example.name
-  bucket        = aws_s3_bucket.example.bucket
-  table_type    = "EXTERNAL_TABLE"
-  external_location = "s3://${aws_s3_bucket.example.bucket}/data/table1/"
 
-  schema {
-    columns = [
+# Create IAM Policy for Amazon EventBridge Pipes
+resource "aws_iam_policy" "pipes_pipe_policy" {
+  name        = "AmazonEventBridgePipesPolicy"
+  description = "Policy granting necessary permissions for Amazon EventBridge Pipes"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
       {
-        name = "id"
-        type = "int"
+        Effect = "Allow",
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes",  # Add other necessary SQS permissions as needed
+          # Add other necessary permissions for Amazon EventBridge Pipes
+        ],
+        Resource = [
+          aws_sqs_queue.sqs_queue_infra_prov.arn,
+          # Add other necessary resource ARNs
+        ],
       },
-      {
-        name = "name"
-        type = "string"
-      },
-      {
-        name = "age"
-        type = "int"
-      }
     ]
-  }
-
-  partition_keys = [
-    {
-      name = "year"
-      type = "int"
-    },
-    {
-      name = "month"
-      type = "int"
-    }
-  ]
+  })
 }
 
-# Create the second Athena table
-resource "aws_athena_table" "example_table2" {
-  name          = "example_table2"
-  database      = aws_athena_database.example.name
-  bucket        = aws_s3_bucket.example.bucket
-  table_type    = "EXTERNAL_TABLE"
-  external_location = "s3://${aws_s3_bucket.example.bucket}/data/table2/"
-
-  schema {
-    columns = [
-      {
-        name = "id"
-        type = "int"
-      },
-      {
-        name = "product"
-        type = "string"
-      },
-      {
-        name = "price"
-        type = "float"
-      }
-    ]
-  }
-
-  partition_keys = [
-    {
-      name = "category"
-      type = "string"
-    },
-    {
-      name = "year"
-      type = "int"
-    }
-  ]
+# Attach IAM Policy to IAM Role
+resource "aws_iam_role_policy_attachment" "pipes_pipe_policy_attachment" {
+  policy_arn = aws_iam_policy.pipes_pipe_policy.arn
+  role       = aws_iam_role.iam_for_pipes_pipe_infra_prov.name
 }
 
+# ...
 
+# Update IAM Role for AWS EventBridge Scheduler
+resource "aws_iam_role" "iam_for_scheduler_infra_prov" {
+  name = "eventbridge-scheduler-role"
 
-# Create the first Glue catalog table
-resource "aws_glue_catalog_table" "example_table1" {
-  name          = "example_table1"
-  database_name = aws_glue_catalog_database.example.name
-  table_type    = "EXTERNAL_TABLE"
-  parameters = {
-    "classification" = "parquet"  # Change based on your data format
-    "EXTERNAL"       = "TRUE"
-  }
-  storage_descriptor {
-    location      = "s3://${aws_s3_bucket.example.bucket}/data/table1/"
-    input_format  = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"  # Change based on your data format
-    output_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"  # Change based on your data format
-    ser_de_info {
-      name                  = "example_table1"
-      serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"  # Change based on your data format
-    }
-    columns = [
-      {
-        name = "id"
-        type = "int"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Action = "sts:AssumeRole",
+      Principal = {
+        Service = "scheduler.amazonaws.com"
       },
-      {
-        name = "name"
-        type = "string"
-      },
-      {
-        name = "age"
-        type = "int"
-      }
-    ]
-  }
-  partition_keys = [
-    {
-      name = "year"
-      type = "int"
-    },
-    {
-      name = "month"
-      type = "int"
-    }
-  ]
+      Effect = "Allow"
+    }]
+  })
 }
 
-# Create the second Glue catalog table
-resource "aws_glue_catalog_table" "example_table2" {
-  name          = "example_table2"
-  database_name = aws_glue_catalog_database.example.name
-  table_type    = "EXTERNAL_TABLE"
-  parameters = {
-    "classification" = "parquet"  # Change based on your data format
-    "EXTERNAL"       = "TRUE"
-  }
-  storage_descriptor {
-    location      = "s3://${aws_s3_bucket.example.bucket}/data/table2/"
-    input_format  = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"  # Change based on your data format
-    output_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"  # Change based on your data format
-    ser_de_info {
-      name                  = "example_table2"
-      serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"  # Change based on your data format
-    }
-    columns = [
-      {
-        name = "id"
-        type = "int"
-      },
-      {
-        name = "product"
-        type = "string"
-      },
-      {
-        name = "price"
-        type = "float"
-      }
-    ]
-  }
-  partition_keys = [
-    {
-      name = "category"
-      type = "string"
-    },
-    {
-      name = "year"
-      type = "int"
-    }
-  ]
+# Attach IAM Policy to IAM Role for AWS EventBridge Scheduler
+resource "aws_iam_role_policy_attachment" "scheduler_role_attachment" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaRole"  # Assuming you want to use the AWSLambdaRole, adjust as needed
+  role       = aws_iam_role.iam_for_scheduler_infra_prov.name
 }
 
-# Create the first Athena table using a named query
-resource "aws_athena_named_query" "example_table1" {
-  name      = "CreateExampleTable1"
-  database  = aws_athena_database.example.name
-  query     = <<EOF
-CREATE EXTERNAL TABLE IF NOT EXISTS example_table1 (
-  id INT,
-  name STRING,
-  age INT
-)
-PARTITIONED BY (year INT, month INT)
-STORED AS PARQUET
-LOCATION 's3://${aws_s3_bucket.example.bucket}/data/table1/'
-EOF
+# Create Scheduler Schedule Group
+resource "aws_scheduler_schedule_group" "scheduler_schedule_group_infra_prov" {
+  name = var.schedule_group_name
 }
 
-# Create the second Athena table using a named query
-resource "aws_athena_named_query" "example_table2" {
-  name      = "CreateExampleTable2"
-  database  = aws_athena_database.example.name
-  query     = <<EOF
-CREATE EXTERNAL TABLE IF NOT EXISTS example_table2 (
-  id INT,
-  product STRING,
-  price FLOAT
-)
-PARTITIONED BY (category STRING, year INT)
-STORED AS PARQUET
-LOCATION 's3://${aws_s3_bucket.example.bucket}/data/table2/'
-EOF
+# Create Scheduler Schedule with AWS Pipes Pipe as the target
+resource "aws_scheduler_schedule" "scheduler_schedule_infra_prov" {
+  name                = var.schedule_name
+  schedule_expression = "rate(1 day)"  
+  group_name          = aws_scheduler_schedule_group.scheduler_schedule_group_infra_prov.name    
+
+  flexible_time_window {
+    mode = "OFF"  # Adjust as needed
+  }
+
+  target {
+    arn      = aws_lambda_function.lambda_function_infra_prov.arn
+    role_arn = aws_iam_role.iam_for_scheduler_infra_prov.arn
+  }
 }
